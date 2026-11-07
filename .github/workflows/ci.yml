@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Test the drift check
+        working-directory: skills/local-ci/scripts
+        run: python3 test_act_drift.py
+      - name: Drift check runs on this repository
+        # Exit 1 means drift (expected here: no .actrc), 2 means no workflows. Anything else is a crash.
+        run: |
+          set +e
+          python3 skills/local-ci/scripts/act_drift.py
+          code=$?
+          [ "$code" -le 1 ] || { echo "::error::act_drift.py exited $code"; exit 1; }

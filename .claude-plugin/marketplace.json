@@ -1,0 +1,11 @@
+{
+  "name": "local-ci",
+  "owner": { "name": "Atypical Consulting", "url": "https://www.atypical.consulting" },
+  "plugins": [
+    {
+      "name": "local-ci",
+      "source": "./",
+      "description": "Run your GitHub Actions workflows locally with act and keep the local setup in sync with .github/workflows."
+    }
+  ]
+}

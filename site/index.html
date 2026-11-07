@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>local-ci — run your GitHub Actions on your own machine</title>
+<meta name="description" content="A Claude Code skill that runs your GitHub Actions workflows locally with act, and keeps the local setup in sync with .github/workflows. One workflow file, no second pipeline.">
+<meta property="og:title" content="local-ci — one recipe, two kitchens">
+<meta property="og:description" content="Run your GitHub Actions workflows on your own machine with act. Same YAML, no second pipeline, a drift check to keep it honest.">
+<meta name="theme-color" content="#fcfaf4">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='20' rx='2' fill='%23fcfaf4' stroke='%2324292e' stroke-width='2.5'/%3E%3Cpath d='M3 12h26' stroke='%23fd9b83' stroke-width='2.5'/%3E%3Cpath d='M9 19l3 3 6-7' fill='none' stroke='%2324292e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Kalam"; src: url("fonts/kalam-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Courier Prime"; src: url("fonts/courier-prime-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+
+:root {
+  --ink: #24292e;
+  --ink-soft: #4a525a;
+  --cream: #fcfaf4;
+  --card: #fffdf7;
+  --rule: #d9e4ec;
+  --coral: #fd9b83;
+  --coral-wash: #feeae3;
+  --green: #38d084;
+  --gold: #f1c362;
+  --hand: "Kalam", "Segoe Print", cursive;
+  --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --type: "Courier Prime", ui-monospace, monospace;
+  --line: 1.75rem;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font: 400 1.0625rem/1.65 var(--body);
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--coral); color: var(--ink); }
+a { color: var(--ink); text-decoration-color: var(--coral); text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 3px; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 3px; }
+html { scrollbar-color: var(--ink-soft) var(--cream); }
+code, pre, kbd { font-family: var(--type); font-size: 0.95em; }
+
+.wrap { width: min(72rem, 100% - 2.5rem); margin-inline: auto; }
+
+/* ---- masthead ---- */
+.mast { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1.25rem; }
+.mast .name { font: 700 1.4rem/1 var(--hand); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+.mast nav { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.mast nav a { text-decoration: none; font-weight: 700; font-size: 0.92rem; }
+.mast nav a:hover { text-decoration: underline; text-decoration-color: var(--coral); }
+
+/* ---- marks: one vocabulary, used everywhere ---- */
+/* <use> content can't be selected, but custom properties inherit into it */
+@property --m-off { syntax: "<number>"; inherits: true; initial-value: 0; }
+.mark { width: 1.5rem; height: 1.5rem; flex: none; --m-fill: var(--card); --m-dash: none; --m-off: 0; }
+.mark.ok { --m-fill: var(--green); }
+.mark.no { --m-fill: var(--coral); }
+.mark.ask { --m-dash: 3 2.5; }
+
+/* ---- the card ---- */
+.hero { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; padding-block: clamp(1rem, 3vw, 2.5rem) clamp(3rem, 7vw, 5.5rem); }
+.card {
+  position: relative;
+  background:
+    linear-gradient(var(--coral), var(--coral)) 0 4.75rem / 100% 2px no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px) var(--line)) 0 4.75rem / 100% 100% no-repeat,
+    var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  padding: 1.1rem clamp(1.25rem, 3.5vw, 2.75rem) 2rem clamp(1.75rem, 5vw, 3.75rem);
+  box-shadow: 0 1px 0 var(--ink), 0 18px 40px -22px rgba(36, 41, 46, 0.45);
+}
+.card::before { /* the margin rule */
+  content: ""; position: absolute; top: 0; bottom: 0; left: clamp(1rem, 3.2vw, 2.4rem); width: 2px; background: var(--coral);
+}
+.card h1 { font: 700 clamp(2.6rem, 6vw, 4.25rem)/1 var(--hand); margin: 0; letter-spacing: -0.01em; min-height: 3.65rem; }
+.card .lede { font-size: clamp(1.15rem, 2vw, 1.35rem); line-height: var(--line); margin: 1.6rem 0 0; max-width: 36ch; text-wrap: balance; }
+.meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.75rem; margin: var(--line) 0 0; padding: 0; list-style: none; line-height: var(--line); font-size: 1rem; }
+.meta b { font-family: var(--hand); font-weight: 700; font-size: 1.05rem; margin-right: 0.35rem; }
+.card h2 { font: 700 1.5rem/var(--line) var(--hand); margin: var(--line) 0 0; }
+.ingredients { list-style: none; margin: 0; padding: 0; }
+.ingredients li { display: flex; gap: 0.7rem; align-items: center; min-height: var(--line); line-height: var(--line); }
+.ingredients code { font-size: 1rem; }
+.ingredients .note { color: var(--ink-soft); }
+.step1 { margin: 0; }
+.step1 p { margin: 0; line-height: var(--line); }
+.cmd {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  margin-top: 0.5rem; min-height: calc(2 * var(--line) - 0.5rem); padding: 0.25rem 0.4rem 0.25rem 0.9rem;
+  background: var(--cream); border: 1.5px solid var(--ink); border-radius: 4px;
+}
+.cmd code { font-size: 0.85rem; white-space: nowrap; min-width: 0; overflow-x: auto; }
+.ingredients li > span { min-width: 0; overflow-wrap: anywhere; }
+.copy {
+  flex: none; font: 700 0.85rem/1 var(--body); color: var(--ink);
+  background: var(--coral); border: 1.5px solid var(--ink); border-radius: 999px;
+  padding: 0.5rem 0.85rem; cursor: pointer; min-width: 5.2rem;
+  transition: background-color 160ms ease-out, transform 160ms cubic-bezier(.2,.8,.2,1);
+}
+.copy:hover { background: #fc8a6e; }
+.copy:active { transform: translateY(1px); }
+.copy[data-state="done"] { background: var(--ink); color: var(--cream); }
+.copy[data-state="fail"] { background: var(--gold); }
+.after { margin: 0.9rem 0 0; line-height: var(--line); }
+
+/* ---- two kitchens ---- */
+.kitchens { margin: 0; }
+.kitchens svg { width: 100%; height: auto; display: block; overflow: visible; }
+.kitchens figcaption { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.4rem; font: 700 1.05rem/1.35 var(--hand); text-align: center; }
+.kitchens figcaption span { display: block; font: 400 0.85rem/1.4 var(--body); color: var(--ink-soft); }
+.thread { stroke-dasharray: 600; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .js .thread { animation: draw 1.6s cubic-bezier(.16,1,.3,1) 250ms both; }
+  .js .ingredients .mark { animation: tick 600ms cubic-bezier(.16,1,.3,1) both; }
+  .js .ingredients li:nth-child(1) .mark { animation-delay: 900ms; }
+  .js .ingredients li:nth-child(2) .mark { animation-delay: 1050ms; }
+  .js .ingredients li:nth-child(3) .mark { animation-delay: 1200ms; }
+  .js .ingredients li:nth-child(4) .mark { animation-delay: 1350ms; }
+}
+@keyframes draw { from { stroke-dashoffset: 600; } }
+@keyframes tick { from { --m-off: 24; } }
+
+/* ---- sections ---- */
+section { padding-block: clamp(3rem, 7vw, 5.5rem); border-top: 2px solid var(--ink); }
+.sec-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+section h2 { font: 700 clamp(1.9rem, 4vw, 2.75rem)/1.08 var(--hand); margin: 0 0 1rem; text-wrap: balance; }
+.prose { max-width: 66ch; }
+.prose p { margin: 0 0 1.1rem; }
+.prose p:last-child { margin-bottom: 0; }
+.sign { font: 700 1.35rem/1 var(--hand); margin-top: 1.5rem; }
+
+/* method */
+.method { list-style: none; margin: 0; padding: 0; counter-reset: step; display: grid; gap: 2rem; }
+.method > li { counter-increment: step; display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; }
+.method > li::before { content: counter(step); font: 700 2.4rem/1 var(--hand); color: var(--ink); width: 3rem; height: 3rem; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 50%; background: var(--coral-wash); }
+.method h3 { font: 700 1.3rem/1.3 var(--body); margin: 0.35rem 0 0.4rem; }
+.method p { margin: 0 0 0.6rem; }
+.say { font-family: var(--type); background: var(--card); border: 1.5px dashed var(--ink-soft); border-radius: 4px; padding: 0.6rem 0.9rem; display: inline-block; }
+.out { margin: 0.75rem 0 0; background: var(--ink); color: var(--cream); border-radius: 6px; padding: 1rem 1.2rem; overflow-x: auto; font-size: 0.86rem; line-height: 1.55; tab-size: 2; white-space: pre; }
+.out .drift { color: var(--coral); }
+.out-cap { font-size: 0.92rem; color: var(--ink-soft); margin: 0.5rem 0 0; }
+.out::-webkit-scrollbar { height: 10px; }
+.out::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+
+/* tables */
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.tbl caption { text-align: left; font-size: 0.92rem; color: var(--ink-soft); caption-side: bottom; padding-top: 0.75rem; }
+.tbl th, .tbl td { text-align: left; vertical-align: top; padding: 0.85rem 0.9rem 0.85rem 0; border-bottom: 1.5px solid var(--rule); }
+.tbl thead th { font: 700 1.1rem/1.2 var(--hand); border-bottom: 2px solid var(--ink); }
+.tbl td.m { width: 2.25rem; padding-right: 0.5rem; }
+.tbl .num { font-family: var(--type); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl tbody tr:last-child td, .tbl tbody tr:last-child th { border-bottom: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; font-size: 0.92rem; }
+.legend li { display: flex; align-items: center; gap: 0.5rem; }
+
+.tasting { padding-bottom: var(--line); }
+.tasting h3 { font: 700 1.6rem/1 var(--hand); margin: 0; min-height: 3.65rem; display: flex; align-items: center; }
+.tbl.tasted { margin-top: var(--line); }
+.tbl.tasted th, .tbl.tasted td { padding: 0 0.9rem 0 0; line-height: var(--line); height: var(--line); border: none; }
+.tbl.tasted thead th { border: none; font-size: 1.15rem; }
+.tbl.tasted caption { line-height: var(--line); padding-top: var(--line); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.card .card-title { font: 700 clamp(2rem, 4.5vw, 3rem)/1 var(--hand); margin: 0; min-height: 3.65rem; display: flex; align-items: center; }
+/* tradeoff ladder */
+.ladder { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
+.ladder li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 1rem; padding: 0.8rem 0; border-bottom: 1.5px solid var(--rule); }
+.ladder li:last-child { border-bottom: none; }
+.ladder .lvl { font: 700 1.05rem/1.3 var(--hand); }
+
+/* close */
+.close { text-align: left; }
+.close .card { max-width: 46rem; }
+footer { border-top: 2px solid var(--ink); padding-block: 2rem 3rem; font-size: 0.92rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .kitchens { max-width: 26rem; margin-inline: auto; }
+  .sec-head { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+}
+@media (max-width: 560px) {
+  body { font-size: 1rem; }
+  .cmd code { white-space: normal; overflow-wrap: anywhere; }
+  .meta { gap: 0 1.25rem; }
+  .mast nav { gap: 0.9rem; }
+  .mast nav a:not(.gh) { display: none; }
+  .cmd { flex-direction: column; align-items: stretch; min-height: calc(4 * var(--line) - 0.5rem); padding-block: 0.5rem; }
+  .copy { align-self: flex-end; }
+  .ladder li { grid-template-columns: 1fr; gap: 0.15rem; }
+  .tbl { font-size: 0.92rem; }
+  .tbl.limits thead { display: none; }
+  .tbl.limits tr { display: grid; grid-template-columns: 2rem minmax(0, 1fr); padding: 0.75rem 0; border-bottom: 1.5px solid var(--rule); }
+  .tbl.limits td, .tbl.limits th { border: none; padding: 0.1rem 0; }
+  .tbl.limits td:nth-child(n+3) { grid-column: 2; }
+  .tbl.limits td[data-label]::before { content: attr(data-label); display: block; font: 700 0.95rem/1.4 var(--hand); margin-top: 0.35rem; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="m-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" style="fill:var(--m-fill);stroke:#24292e;stroke-width:2;stroke-dasharray:var(--m-dash)"/><path d="M7.2 12.4l3.2 3.2 6.4-7" pathLength="24" style="fill:none;stroke:#24292e;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:var(--m-off)"/></symbol>
+  <symbol id="m-no" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" style="fill:var(--m-fill);stroke:#24292e;stroke-width:2;stroke-dasharray:var(--m-dash)"/><path d="M8.2 8.2l7.6 7.6M15.8 8.2l-7.6 7.6" style="fill:none;stroke:#24292e;stroke-width:2.6;stroke-linecap:round"/></symbol>
+  <symbol id="m-ask" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" style="fill:var(--m-fill);stroke:#24292e;stroke-width:2;stroke-dasharray:var(--m-dash)"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.5M12 16.8v.2" style="fill:none;stroke:#24292e;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"/></symbol>
+</svg>
+
+<header class="wrap mast">
+  <a class="name" href="#top" aria-label="local-ci, top of page">local-ci</a>
+  <nav aria-label="Sections">
+    <a href="#why">Why</a>
+    <a href="#method">Method</a>
+    <a href="#notes">Kitchen notes</a>
+    <a href="#tasted">Results</a>
+    <a class="gh" href="https://github.com/Atypical-Consulting/local-ci">GitHub</a>
+  </nav>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <article class="card" aria-labelledby="t">
+      <h1 id="t">local-ci</h1>
+      <p class="lede">Run your GitHub Actions on your own machine. Same workflow file, no second pipeline.</p>
+      <ul class="meta" aria-label="At a glance">
+        <li><b>Serves</b>one repository</li>
+        <li><b>Needs</b>act + Docker</li>
+        <li><b>For</b>Claude Code</li>
+      </ul>
+
+      <h2>Ingredients</h2>
+      <ul class="ingredients">
+        <li><svg class="mark ok" aria-hidden="true"><use href="#m-ok"/></svg><span><code>.actrc</code> <span class="note">· one image per <code>runs-on</code> label</span></span></li>
+        <li><svg class="mark ok" aria-hidden="true"><use href="#m-ok"/></svg><span><code>.secrets</code> <span class="note">· gitignored, names your workflows use</span></span></li>
+        <li><svg class="mark ok" aria-hidden="true"><use href="#m-ok"/></svg><span><code>.vars</code> <span class="note">· for <code>${{ vars.* }}</code></span></span></li>
+        <li><svg class="mark ok" aria-hidden="true"><use href="#m-ok"/></svg><span><code>.github/<wbr>act/<wbr>pull_request.json</code> <span class="note">· the event</span></span></li>
+      </ul>
+
+      <h2>Step 1 — install</h2>
+      <div class="step1">
+        <p>In Claude Code:</p>
+        <div class="cmd"><code id="c1">/plugin marketplace add Atypical-Consulting/local-ci</code><button class="copy" type="button" data-copy="c1">Copy</button></div>
+        <div class="cmd"><code id="c2">/plugin install local-ci@local-ci</code><button class="copy" type="button" data-copy="c2">Copy</button></div>
+        <p class="after">Then, in any repository: <em>“set up local CI for this repo”</em>.</p>
+      </div>
+    </article>
+
+    <figure class="kitchens" aria-labelledby="kcap">
+      <svg viewBox="0 0 400 430" role="img" aria-labelledby="ktitle">
+        <title id="ktitle">One recipe card feeds two kitchens through a single ink line: a big metered stove in GitHub's kitchen, and a small pot on a laptop in yours.</title>
+        <g fill="none" stroke="#24292e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <!-- the recipe card, hand-ruled -->
+          <path d="M134 26 C170 22 236 18 268 15 C270 44 272 82 273 108 C236 112 172 116 140 119 C138 92 135 52 134 26 Z" fill="#fffdf7"/>
+          <path d="M135 47 C180 43 230 39 270 36" stroke="#fd9b83"/>
+          <path d="M150 25 C151 56 153 92 155 118" stroke="#fd9b83" stroke-width="2.2"/>
+          <path d="M164 34 C180 33 200 31 218 30" stroke-width="4"/>
+          <path d="M165 63 C196 61 228 58 256 56 M166 80 C192 78 218 76 240 74 M167 97 C196 95 226 92 252 91"/>
+          <!-- the one line, forking -->
+          <path class="thread" d="M204 118 C203 150 206 170 204 196 C202 222 128 214 104 252 M204 196 C207 222 280 216 300 270"/>
+        </g>
+        <circle cx="204" cy="196" r="7.5" fill="#fd9b83" stroke="#24292e" stroke-width="3"/>
+
+        <!-- GitHub's kitchen: a big rented range with a quota meter -->
+        <g fill="none" stroke="#24292e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M62 236 C60 222 76 216 86 222 C90 210 112 208 118 220 C130 216 140 228 134 238 C112 240 84 240 62 236 Z" fill="#fcfaf4"/>
+          <path d="M20 262 C64 259 128 258 182 261 C184 310 183 360 181 404 C130 407 70 407 22 404 C19 360 19 310 20 262 Z" fill="#fcfaf4"/>
+          <path d="M22 290 C70 288 130 288 181 290"/>
+          <path d="M38 276 C48 272 62 272 70 276 M126 276 C136 272 150 272 160 276" stroke-width="5"/>
+          <!-- quota meter -->
+          <path d="M66 330 C66 306 84 296 101 296 C118 296 136 306 136 330 Z" fill="#f1c362"/>
+          <path d="M72 326 L76 320 M86 306 L88 312 M101 302 L101 309 M116 306 L114 312 M130 326 L126 320"/>
+          <path d="M101 329 L127 312" stroke-width="3.5"/>
+          <circle cx="101" cy="329" r="3.5" fill="#24292e"/>
+          <path d="M40 352 C80 350 124 350 162 352 C163 368 163 380 162 392 C124 394 80 394 41 392 C40 380 40 366 40 352 Z" fill="#fcfaf4"/>
+          <path d="M84 366 C96 365 108 365 120 366"/>
+        </g>
+
+        <!-- your kitchen: a small pot simmering on a laptop -->
+        <g fill="none" stroke="#24292e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M276 262 C280 256 282 252 278 246 M294 262 C298 256 300 252 296 246 M312 262 C316 256 318 252 314 246" stroke-width="2.5"/>
+          <path d="M268 272 C290 270 316 270 338 272"/>
+          <path d="M272 274 C272 298 280 314 304 315 C328 314 334 298 334 274" fill="#fd9b83"/>
+          <path d="M262 276 C266 274 268 274 272 276 M334 276 C338 274 340 274 344 276"/>
+          <path d="M236 330 C270 327 334 326 372 329 C371 348 370 362 368 374 C322 376 280 376 238 374 C237 360 236 344 236 330 Z" fill="#fcfaf4"/>
+          <path d="M252 342 C290 340 326 340 356 342 C356 350 356 356 355 362 C320 363 286 363 253 362 C252 356 252 348 252 342 Z" fill="#24292e"/>
+          <path d="M222 378 C268 380 336 380 386 377 C382 388 374 394 364 394 C320 396 280 396 244 394 C232 394 226 388 222 378 Z" fill="#fcfaf4"/>
+          <path d="M284 386 C296 385 308 385 320 386"/>
+        </g>
+      </svg>
+      <figcaption id="kcap">
+        <div>GitHub's kitchen<span>pay per minute, or wait for the quota</span></div>
+        <div>Your kitchen<span>act in Docker, on your Mac</span></div>
+      </figcaption>
+    </figure>
+  </div>
+
+  <section id="why">
+    <div class="wrap sec-head">
+      <h2>Why I made this</h2>
+      <div class="prose">
+        <p>My company's GitHub organisation is on the free plan. One month it ran out of Actions minutes, and from then on every job on its private repositories failed in three or four seconds with zero steps executed. Nothing was wrong with the code. GitHub had simply stopped cooking.</p>
+        <p>Running workflows locally with <a href="https://github.com/nektos/act">act</a> was the obvious way out. The trap is the next step: someone copies the CI steps into a <code>ci-local.sh</code>, and from that day there are two pipelines that slowly disagree. I watched an agent do exactly that when I asked it to set up local CI without guidance.</p>
+        <p>So the rule of this skill is simple: <strong>the workflow file stays the only recipe.</strong> act cooks the real YAML. The only local things are the ingredients act needs, and a drift check tells you when they no longer match what the workflows ask for.</p>
+        <p class="sign">— Philippe Matray</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="wrap sec-head">
+      <h2>Method</h2>
+      <ol class="method">
+        <li>
+          <div>
+            <h3>Ask for it</h3>
+            <p>In the repository you want to run locally, tell Claude Code:</p>
+            <p class="say">set up local CI for this repo so I stop burning Actions minutes</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Check the ingredients</h3>
+            <p>The skill reads every workflow, then runs its drift check: which <code>runs-on</code> labels have no image, which secrets and vars are missing, which jobs only GitHub can run. It prints names, never secret values. This is real output, on a copy of TaLibStandard right after two jobs were added to its workflow:</p>
+<pre class="out" tabindex="0" aria-label="Drift check output"><code>$ python3 act_drift.py
+.github/workflows/ci-cd.yml  on=push,pull_request,workflow_dispatch
+  runs-on=macos-14,macos-latest,ubuntu-24.04,ubuntu-latest,windows-latest
+  note  GitHub-only (act can't run): macos-14, macos-latest, windows-latest
+  note  id-token: write (OIDC) — guard publish/deploy steps with !env.ACT
+
+<span class="drift">DRIFT:</span>
+  .github/workflows/ci-cd.yml: unmapped: ubuntu-24.04
+  .github/workflows/ci-cd.yml: missing secrets: CODECOV_TOKEN
+  .actrc sets artifact-server-path: act ignores host-path flags
+         in a project .actrc
+  .actrc forces linux/amd64 on Apple Silicon: breaks node after setup-* actions
+         and runs ~4.5x slower — run natively</code></pre>
+            <p class="out-cap">Lines wrapped for width. Exit code 1 while anything drifts, 0 once it is clean.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Cook the real workflow</h3>
+            <p>act runs the jobs of <code>.github/workflows/*.yml</code> in Docker. Every failure is sorted into one of three: a <strong>real failure</strong> (fix the code), an <strong>act limitation</strong> (see the notes below), or a <strong>missing ingredient</strong> (fix the local files). Only the second can justify touching a workflow, and only with a guard that changes nothing on GitHub, after asking you.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Re-check when the recipe changes</h3>
+            <p>Changes flow one way: workflow file first, local files after. Run the drift check again after any workflow edit, or let a pre-push hook run it with act before each push. A red build caught here is a GitHub run that never happens.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="notes">
+    <div class="wrap sec-head">
+      <div>
+        <h2>Kitchen notes</h2>
+        <p class="prose">What the local kitchen cannot cook, measured with act 0.2.97 on Apple Silicon. Each one was reproduced, not read in a changelog.</p>
+      </div>
+      <div>
+        <table class="tbl limits">
+          <thead><tr><th scope="col"><span class="visually-hidden">Status</span></th><th scope="col">On GitHub</th><th scope="col">Under act</th><th scope="col">What the skill does</th></tr></thead>
+          <tbody>
+            <tr><td class="m"><svg class="mark no" role="img" aria-label="GitHub-only"><use href="#m-no"/></svg></td><th scope="row">macOS and Windows jobs</th><td data-label="Under act">Linux containers only</td><td data-label="The skill">Reports them as GitHub-only; runs the Linux legs.</td></tr>
+            <tr><td class="m"><svg class="mark no" role="img" aria-label="GitHub-only"><use href="#m-no"/></svg></td><th scope="row">OIDC (<code>id-token: write</code>)</th><td data-label="Under act">No token provider</td><td data-label="The skill">Publishing stays on GitHub. Local CI is for build and test.</td></tr>
+            <tr><td class="m"><svg class="mark ask" role="img" aria-label="Your decision"><use href="#m-ask"/></svg></td><th scope="row"><code>upload-artifact@v4+</code></th><td data-label="Under act">act's artifact server rejects it (<code>unknown field "mime_type"</code>)</td><td data-label="The skill">Counts the job as passing when only this step is red, names the step, offers an opt-in <code>!env.ACT</code> guard.</td></tr>
+            <tr><td class="m"><svg class="mark ok" role="img" aria-label="Handled"><use href="#m-ok"/></svg></td><th scope="row">x64 runners</th><td data-label="Under act">Forcing <code>linux/amd64</code> breaks node after <code>setup-dotnet</code>, and is slower (format step <span class="num">7.6</span>&nbsp;s native, <span class="num">34</span>&nbsp;s emulated)</td><td data-label="The skill">Runs natively on arm64.</td></tr>
+            <tr><td class="m"><svg class="mark ok" role="img" aria-label="Handled"><use href="#m-ok"/></svg></td><th scope="row">Two runs of the same job</th><td data-label="Under act">Containers are named by workflow + job: the second run kills the first</td><td data-label="The skill">One run per job at a time; separate artifact and cache ports.</td></tr>
+            <tr><td class="m"><svg class="mark ask" role="img" aria-label="Your decision"><use href="#m-ask"/></svg></td><th scope="row">Generated workflows (Nuke, Cake…)</th><td data-label="Under act">A hand edit is erased at the next regeneration</td><td data-label="The skill">Flags them and points at the generator instead of the YAML.</td></tr>
+          </tbody>
+        </table>
+        <ul class="legend" aria-label="Legend">
+          <li><svg class="mark ok" aria-hidden="true"><use href="#m-ok"/></svg>handled locally</li>
+          <li><svg class="mark no" aria-hidden="true"><use href="#m-no"/></svg>GitHub-only</li>
+          <li><svg class="mark ask" aria-hidden="true"><use href="#m-ask"/></svg>your decision</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="tasted">
+    <div class="wrap sec-head">
+      <div>
+        <h2>Tasted, not tested to death</h2>
+        <p class="prose">Three real tasks on three public repositories, each run once by Claude with the skill and once without, graded on fixed checks. That is a small sample: read it as a taste, not a benchmark.</p>
+      </div>
+      <div>
+        <article class="card tasting" aria-labelledby="tc">
+          <h3 id="tc">Tasting notes</h3>
+          <table class="tbl tasted">
+          <thead><tr><th scope="col">Task</th><th scope="col">Repository</th><th scope="col">With skill</th><th scope="col">Without</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Set up local CI</th><td><a href="https://github.com/Atypical-Consulting/x402-dotnet">x402-dotnet</a></td><td class="num">6 / 6</td><td class="num">2 / 6</td></tr>
+            <tr><th scope="row">Re-sync after a workflow edit</th><td><a href="https://github.com/phmatray/TaLibStandard">TaLibStandard</a></td><td class="num">9 / 9</td><td class="num">7 / 9</td></tr>
+            <tr><th scope="row">Run the PR workflow</th><td><a href="https://github.com/phmatray/PipeException">PipeException</a></td><td class="num">7 / 7</td><td class="num">7 / 7</td></tr>
+          </tbody>
+          <caption>One run per configuration. Without the skill, the setup task produced a hand-written <code>ci-local.sh</code> copy of the pipeline. On the PR run there was no difference in outcome. The checks are in <a href="https://github.com/Atypical-Consulting/local-ci/blob/main/evals/evals.json">evals/evals.json</a>.</caption>
+          </table>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="cost">
+    <div class="wrap sec-head">
+      <h2>The part that costs you</h2>
+      <div class="prose">
+        <p>Running act saves money only if GitHub runs less, and that lever is yours. Branch protection, required checks and automerge only read <strong>GitHub's</strong> checks: a green run on your Mac is invisible to them. The skill never changes your triggers. It lays out the options, gentlest first:</p>
+        <ol class="ladder">
+          <li><span class="lvl">Gentlest</span><span>Cancel superseded runs with <code>concurrency: cancel-in-progress</code>.</span></li>
+          <li><span class="lvl">Cheap</span><span>Skip CI on docs-only changes with <code>paths-ignore</code>.</span></li>
+          <li><span class="lvl">Bigger</span><span>Move heavy jobs (full matrix, macOS) to nightly or manual triggers.</span></li>
+          <li><span class="lvl">Last resort</span><span>Drop the <code>pull_request</code> trigger, and accept that PRs carry no GitHub verdict.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="close" aria-labelledby="again">
+    <div class="wrap">
+      <article class="card">
+        <h2 id="again" class="card-title">Start cooking</h2>
+        <div class="step1">
+          <div class="cmd"><code id="c3">/plugin marketplace add Atypical-Consulting/local-ci</code><button class="copy" type="button" data-copy="c3">Copy</button></div>
+          <div class="cmd"><code id="c4">/plugin install local-ci@local-ci</code><button class="copy" type="button" data-copy="c4">Copy</button></div>
+          <p class="after">Needs <a href="https://nektosact.com">act</a> and a running Docker engine (OrbStack or Docker Desktop). MIT licensed — source on <a href="https://github.com/Atypical-Consulting/local-ci">GitHub</a>.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>Made by Philippe Matray at <a href="https://www.atypical.consulting">Atypical Consulting</a>.</span>
+  <span>MIT · not affiliated with GitHub or nektos/act.</span>
+</footer>
+
+<script>
+document.documentElement.classList.add("js");
+document.querySelectorAll(".copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var text = document.getElementById(btn.dataset.copy).textContent;
+    var done = function (ok) {
+      btn.dataset.state = ok ? "done" : "fail";
+      btn.textContent = ok ? "Copied" : "Select it";
+      setTimeout(function () { btn.dataset.state = ""; btn.textContent = "Copy"; }, 1800);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else { done(false); }
+  });
+});
+</script>
+</body>
+</html>

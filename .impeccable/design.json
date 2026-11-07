@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-07T15:45:00Z",
+  "title": "Design System: local-ci",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(27.8% 0.012 248.2)", "tonalRamp": ["#090b0e", "#222529", "#3e4348", "#5c6268", "#7d8389", "#a0a6ac", "#c4cad0", "#eaeff4"] },
+      "ink-soft": { "role": "neutral", "displayName": "Soft Ink", "canonical": "oklch(43.4% 0.017 248.2)", "tonalRamp": ["#080c0f", "#20262b", "#3c434a", "#5a626b", "#7b838c", "#9da6af", "#c2cad3", "#e8eff6"] },
+      "cream": { "role": "neutral", "displayName": "Cream", "canonical": "oklch(98.5% 0.008 91.5)", "tonalRamp": ["#0c0b09", "#262522", "#43423d", "#63615c", "#84827d", "#a7a59f", "#cbc9c4", "#f0eeea"] },
+      "card": { "role": "neutral", "displayName": "Card Stock", "canonical": "oklch(99.4% 0.008 91.5)", "tonalRamp": ["#0c0b09", "#262522", "#43423d", "#63615c", "#84827d", "#a7a59f", "#cbc9c4", "#f0eeea"] },
+      "rule": { "role": "neutral", "displayName": "Rule Blue", "canonical": "oklch(91.3% 0.016 239.1)", "tonalRamp": ["#080c0f", "#20262a", "#3b4349", "#59636a", "#7a848b", "#9ca7ae", "#c1cbd2", "#e8f0f6"] },
+      "coral": { "role": "primary", "displayName": "Recipe Coral", "canonical": "oklch(78.5% 0.123 34.6)", "tonalRamp": ["#200000", "#470d01", "#722411", "#9a422e", "#c0644e", "#e78770", "#ffaf98", "#ffdac7"] },
+      "coral-press": { "role": "primary", "displayName": "Pressed Coral", "canonical": "oklch(75.2% 0.145 34.8)", "tonalRamp": ["#230000", "#4c0200", "#791900", "#a33920", "#ca5d43", "#f18065", "#ffa98e", "#ffd6c0"] },
+      "coral-wash": { "role": "primary", "displayName": "Coral Wash", "canonical": "oklch(95.1% 0.024 40.3)", "tonalRamp": ["#100907", "#2d221f", "#4d3e39", "#6e5d57", "#907e78", "#b3a09a", "#d6c5bf", "#f9ebe6"] },
+      "green": { "role": "secondary", "displayName": "Kitchen Green", "canonical": "oklch(76.2% 0.166 156.3)", "tonalRamp": ["#001400", "#003405", "#005719", "#007b35", "#009e56", "#22c378", "#69e6a0", "#a9ffcd"] },
+      "gold": { "role": "secondary", "displayName": "Meter Gold", "canonical": "oklch(83.9% 0.126 84.0)", "tonalRamp": ["#180600", "#3a1e00", "#5f3900", "#825900", "#a67a00", "#ca9e39", "#ecc36d", "#ffeaa8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The title on a recipe card. One per card." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings in the left column, balanced wrap." },
+      "title-hand": { "displayName": "Title, hand", "purpose": "Headings inside a ruled card, on the 1.75rem line." },
+      "title": { "displayName": "Title", "purpose": "Method step titles; instructions stay in the reading face." },
+      "lede": { "displayName": "Lede", "purpose": "The card's one-sentence summary, max 36ch, on the ruling." },
+      "body": { "displayName": "Body", "purpose": "Prose, max 66ch; 1rem under 560px." },
+      "body-compact": { "displayName": "Body, compact", "purpose": "Body text under 560px." },
+      "small": { "displayName": "Small", "purpose": "Captions, legends, notes, nav links and secondary table text." },
+      "label-hand": { "displayName": "Label, hand", "purpose": "Metadata keys, table headers, ladder levels, figcaption names." },
+      "label": { "displayName": "Label", "purpose": "Button text." },
+      "mono": { "displayName": "Mono", "purpose": "Code, commands, file names, scores and timings; tabular figures." }
+    },
+    "shadows": [
+      { "name": "card-lift", "value": "0 1px 0 #24292e, 0 18px 40px -22px rgba(36, 41, 46, 0.45)", "purpose": "Recipe cards only: 1px ink edge for card thickness plus a tucked ambient shadow." }
+    ],
+    "motion": [
+      { "name": "draw-thread", "value": "1.6s cubic-bezier(.16,1,.3,1) 250ms", "purpose": "The illustration's ink line draws in once on load. Reduced-motion: off." },
+      { "name": "tick-in", "value": "600ms cubic-bezier(.16,1,.3,1), staggered 900ms + 150ms per row", "purpose": "Ingredient ticks draw themselves once. Reduced-motion: off." },
+      { "name": "press", "value": "160ms ease-out (background), 160ms cubic-bezier(.2,.8,.2,1) (transform)", "purpose": "Copy button hover and 1px press." }
+    ],
+    "breakpoints": [
+      { "name": "stack", "value": "860px" },
+      { "name": "narrow", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Recipe Card",
+      "kind": "card",
+      "refersTo": "recipe-card",
+      "description": "The world's one object: ruled card stock with a coral margin and title rule, lifted off the page.",
+      "html": "<article class=\"ds-card\"><h1 class=\"ds-card-title\">local-ci</h1><h2 class=\"ds-card-h\">Ingredients</h2><p class=\"ds-card-line\">One image per runs-on label.</p><p class=\"ds-card-line\">Secrets your workflows use.</p></article>",
+      "css": ".ds-card { position: relative; max-width: 30rem; background: linear-gradient(#fd9b83, #fd9b83) 0 4.75rem / 100% 2px no-repeat, repeating-linear-gradient(to bottom, transparent 0 calc(1.75rem - 1px), #d9e4ec calc(1.75rem - 1px) 1.75rem) 0 4.75rem / 100% 100% no-repeat, #fffdf7; border: 2px solid #24292e; border-radius: 6px; padding: 1.1rem 2rem 2rem 3rem; box-shadow: 0 1px 0 #24292e, 0 18px 40px -22px rgba(36,41,46,0.45); color: #24292e; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; } .ds-card::before { content: ''; position: absolute; top: 0; bottom: 0; left: 1.75rem; width: 2px; background: #fd9b83; } .ds-card-title { font: 700 3rem/1 'Kalam', 'Segoe Print', cursive; letter-spacing: -0.01em; margin: 0; min-height: 3.65rem; } .ds-card-h { font: 700 1.5rem/1.75rem 'Kalam', 'Segoe Print', cursive; margin: 1.75rem 0 0; } .ds-card-line { margin: 0; line-height: 1.75rem; }"
+    },
+    {
+      "name": "Copy Button",
+      "kind": "button",
+      "refersTo": "button-copy",
+      "description": "The only button: a coral pill that copies a command. Done = Ink with Cream text; fail = Gold.",
+      "html": "<button class=\"ds-copy\" type=\"button\">Copy</button> <button class=\"ds-copy ds-copy-done\" type=\"button\">Copied</button> <button class=\"ds-copy ds-copy-fail\" type=\"button\">Select it</button>",
+      "css": ".ds-copy { font: 700 0.85rem/1 'Atkinson Hyperlegible', system-ui, sans-serif; color: #24292e; background: #fd9b83; border: 1.5px solid #24292e; border-radius: 999px; padding: 0.5rem 0.85rem; min-width: 5.2rem; cursor: pointer; transition: background-color 160ms ease-out, transform 160ms cubic-bezier(.2,.8,.2,1); } .ds-copy:hover { background: #fc8a6e; } .ds-copy:active { transform: translateY(1px); } .ds-copy:focus-visible { outline: 3px solid #24292e; outline-offset: 3px; } .ds-copy-done, .ds-copy-done:hover { background: #24292e; color: #fcfaf4; } .ds-copy-fail, .ds-copy-fail:hover { background: #f1c362; }"
+    },
+    {
+      "name": "Command Line",
+      "kind": "input",
+      "refersTo": "command-line",
+      "description": "A typed command in a Cream field with its Copy button; stacks under 560px.",
+      "html": "<div class=\"ds-cmd\"><code>/plugin install local-ci@local-ci</code><button class=\"ds-cmd-copy\" type=\"button\">Copy</button></div>",
+      "css": ".ds-cmd { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3rem; padding: 0.25rem 0.4rem 0.25rem 0.9rem; background: #fcfaf4; border: 1.5px solid #24292e; border-radius: 4px; max-width: 28rem; } .ds-cmd code { font: 400 0.88rem 'Courier Prime', ui-monospace, monospace; color: #24292e; white-space: nowrap; overflow-x: auto; min-width: 0; } .ds-cmd-copy { flex: none; font: 700 0.85rem/1 'Atkinson Hyperlegible', system-ui, sans-serif; color: #24292e; background: #fd9b83; border: 1.5px solid #24292e; border-radius: 999px; padding: 0.5rem 0.85rem; min-width: 5.2rem; cursor: pointer; transition: background-color 160ms ease-out; } .ds-cmd-copy:hover { background: #fc8a6e; } .ds-cmd-copy:focus-visible { outline: 3px solid #24292e; outline-offset: 3px; }"
+    },
+    {
+      "name": "Marks",
+      "kind": "custom",
+      "refersTo": "marks",
+      "description": "The one status vocabulary: green tick = covered, coral cross = GitHub-only, dashed ask = your decision.",
+      "html": "<ul class=\"ds-legend\"><li><svg class=\"ds-mark\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10.5\" fill=\"#38d084\" stroke=\"#24292e\" stroke-width=\"2\"/><path d=\"M7.2 12.4l3.2 3.2 6.4-7\" fill=\"none\" stroke=\"#24292e\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>handled locally</li><li><svg class=\"ds-mark\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10.5\" fill=\"#fd9b83\" stroke=\"#24292e\" stroke-width=\"2\"/><path d=\"M8.2 8.2l7.6 7.6M15.8 8.2l-7.6 7.6\" fill=\"none\" stroke=\"#24292e\" stroke-width=\"2.6\" stroke-linecap=\"round\"/></svg>GitHub-only</li><li><svg class=\"ds-mark\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10.5\" fill=\"#fffdf7\" stroke=\"#24292e\" stroke-width=\"2\" stroke-dasharray=\"3 2.5\"/><path d=\"M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.5M12 16.8v.2\" fill=\"none\" stroke=\"#24292e\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>your decision</li></ul>",
+      "css": ".ds-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; list-style: none; margin: 0; padding: 0; font: 400 0.95rem 'Atkinson Hyperlegible', system-ui, sans-serif; color: #24292e; } .ds-legend li { display: flex; align-items: center; gap: 0.5rem; } .ds-mark { width: 1.5rem; height: 1.5rem; flex: none; }"
+    },
+    {
+      "name": "Output Panel",
+      "kind": "custom",
+      "refersTo": "output-panel",
+      "description": "Real tool output, Cream on Ink; only the drift marker is Coral.",
+      "html": "<pre class=\"ds-out\" tabindex=\"0\"><code>$ python3 act_drift.py\n  note  GitHub-only: macos-14\n\n<span class=\"ds-drift\">DRIFT:</span>\n  missing secrets: CODECOV_TOKEN</code></pre>",
+      "css": ".ds-out { margin: 0; background: #24292e; color: #fcfaf4; border-radius: 6px; padding: 1rem 1.2rem; overflow-x: auto; font: 400 0.86rem/1.55 'Courier Prime', ui-monospace, monospace; white-space: pre; } .ds-out:focus-visible { outline: 3px solid #24292e; outline-offset: 3px; } .ds-drift { color: #fd9b83; }"
+    },
+    {
+      "name": "Method Step",
+      "kind": "custom",
+      "refersTo": "step-number",
+      "description": "Circled hand-lettered numeral on Coral Wash, Atkinson title, and a dashed prompt slip.",
+      "html": "<div class=\"ds-step\"><span class=\"ds-step-n\">1</span><div><h3 class=\"ds-step-t\">Ask for it</h3><p class=\"ds-say\">set up local CI for this repo</p></div></div>",
+      "css": ".ds-step { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; color: #24292e; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; } .ds-step-n { width: 3rem; height: 3rem; display: grid; place-items: center; border: 2px solid #24292e; border-radius: 50%; background: #feeae3; font: 700 2.4rem/1 'Kalam', 'Segoe Print', cursive; } .ds-step-t { font: 700 1.3rem/1.3 'Atkinson Hyperlegible', system-ui, sans-serif; margin: 0.35rem 0 0.4rem; } .ds-say { display: inline-block; margin: 0; font-family: 'Courier Prime', ui-monospace, monospace; background: #fffdf7; border: 1.5px dashed #4a525a; border-radius: 4px; padding: 0.6rem 0.9rem; }"
+    },
+    {
+      "name": "Masthead",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Hand-lettered product name, bold Atkinson links with a Coral underline on hover.",
+      "html": "<header class=\"ds-mast\"><a class=\"ds-name\" href=\"#\">local-ci</a><nav class=\"ds-nav\"><a href=\"#\">Why</a><a href=\"#\">Method</a><a href=\"#\">GitHub</a></nav></header>",
+      "css": ".ds-mast { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1.25rem; background: #fcfaf4; } .ds-mast a { color: #24292e; } .ds-name { font: 700 1.4rem/1 'Kalam', 'Segoe Print', cursive; text-decoration: none; } .ds-nav { display: flex; gap: 1.25rem; } .ds-nav a { font: 700 0.95rem 'Atkinson Hyperlegible', system-ui, sans-serif; text-decoration: none; } .ds-nav a:hover { text-decoration: underline; text-decoration-color: #fd9b83; text-decoration-thickness: 2px; text-underline-offset: 0.2em; } .ds-mast a:focus-visible { outline: 3px solid #24292e; outline-offset: 3px; border-radius: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Recipe Card",
+    "overview": "The workflow YAML is a recipe card, and GitHub and the visitor's own machine are two kitchens cooking from it. Everything visual comes from that one object: cream index-card stock, pale blue ruled lines on a fixed 1.75rem pitch, a coral margin rule, ink borders, and headings in a handwritten weight. The page reads like a card in a kitchen drawer, not a SaaS product page or a hacker terminal.\n\nDensity is calm and predictable. One accent does most of the work (Coral), the ink is a near-black blue-grey rather than pure black, and motion is limited to a one-time ink line drawing in and the ingredient ticks being drawn, both of which turn off under reduced motion. Hand lettering carries the titles and nothing else. Running text is set in Atkinson Hyperlegible because the product's audience includes neurodivergent and low-vision readers. Typewriter mono marks literal things the visitor types or reads back.\n\nThe world uses a single mark vocabulary everywhere: a green-filled tick for covered, a coral-filled cross for GitHub-only, and a dashed circle with a question mark for \"your decision\". The illustration is flat hand-drawn ink with sparse fills, never photographic.",
+    "keyCharacteristics": [
+      "Cream card stock with a ruled 1.75rem baseline and a 2px coral margin rule",
+      "2px ink borders on cards and section dividers; nothing is borderless and floating",
+      "Kalam for headings and labels only; Atkinson Hyperlegible for reading; Courier Prime for literals",
+      "One three-mark vocabulary (tick, cross, dashed ask) reused on every surface",
+      "Flat ink line illustration, one continuous line, a few charter-colour fills"
+    ],
+    "rules": [
+      { "name": "The One Meaning Rule", "body": "Green means \"covered\" and appears only as the fill of the tick mark. A success state, a badge, or a highlight never takes Green. (The Copy button's success state is Ink with Cream text for this reason.)", "section": "colors" },
+      { "name": "The Ink-Not-Black Rule", "body": "Text and lines are Ink, never pure `#000`. Cream is the light, never pure `#fff`.", "section": "colors" },
+      { "name": "The Two-Or-Three Rule", "body": "From the Atypical charter accents, a composition uses Coral plus at most two others. Coral, Green and Gold are the system's set.", "section": "colors" },
+      { "name": "The Hand-For-Names Rule", "body": "Kalam sets titles, headings and short labels only. Sentences, instructions and anything over one line are Atkinson.", "section": "typography" },
+      { "name": "The Literal-Is-Typed Rule", "body": "Anything the visitor would type or read back from a tool (file names, commands, scores, timings) is Courier Prime. Numbers in tables use tabular figures.", "section": "typography" },
+      { "name": "The One Object Rule", "body": "Only recipe cards are lifted. Everything else lies flat on the page and separates by Ink rules or Rule Blue hairlines.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do start new surfaces from the recipe card: Card Stock, 1.75rem Rule Blue ruling, 2px Coral margin rule, 2px Ink border, 6px corners.",
+      "Do lock in-card text to the 1.75rem line; pad headings to 3.65rem when the following row must land on the ruling.",
+      "Do use the three marks (tick, cross, dashed ask) wherever status is shown, with a legend nearby.",
+      "Do set every literal (command, file, score, timing) in Courier Prime with tabular figures.",
+      "Do separate sections with a 2px Ink rule and the 1fr/2fr headline-then-content grid.",
+      "Do gate every animation behind `prefers-reduced-motion: no-preference`, and play it once.",
+      "Do keep illustration flat hand-drawn ink, 3px round-capped strokes, sparse charter-colour fills."
+    ],
+    "donts": [
+      "Don't use Green for anything except the fill of the covered tick, including success states.",
+      "Don't set sentences or instructions in Kalam; it is for names, headings and short labels.",
+      "Don't lift anything but recipe cards; other containers stay flat.",
+      "Don't use pure black or pure white; use Ink and Cream.",
+      "Don't add a fourth charter accent beyond Coral, Green and Gold to a composition.",
+      "Don't dress the page as a hacker terminal: the Cream-on-Ink output panel shows real tool output, never decorative code."
+    ]
+  }
+}

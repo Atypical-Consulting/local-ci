@@ -1,0 +1,11 @@
+# act secrets — never commit
+.secrets
+# impeccable runtime directories
+.impeccable/questions/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/config.local.json
+# capture harness
+_m390.html
+__pycache__/
+.DS_Store

@@ -1,0 +1,11 @@
+{
+  "name": "local-ci",
+  "displayName": "local-ci",
+  "version": "1.0.0",
+  "description": "Run your GitHub Actions workflows on your own machine with act, and keep the local setup in sync with .github/workflows. One workflow file, no second pipeline.",
+  "author": { "name": "Philippe Matray", "url": "https://www.atypical.consulting" },
+  "homepage": "https://atypical-consulting.github.io/local-ci/",
+  "repository": "https://github.com/Atypical-Consulting/local-ci",
+  "license": "MIT",
+  "keywords": ["github-actions", "act", "ci", "docker", "local-ci", "claude-code"]
+}
